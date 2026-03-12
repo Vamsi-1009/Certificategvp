@@ -1,5 +1,34 @@
 'use strict';
 
+/* ── UI Helpers (Defining early for reliability) ── */
+function goTo(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const el = document.getElementById('page-' + page);
+  if (el) { el.classList.add('active'); window.scrollTo({ top:0, behavior:'smooth' }); }
+  if (page === 'landing') { if (typeof countUp === 'function') countUp('m-certs', DB.get().length); }
+  if (page === 'winners') { if (typeof renderWall === 'function') renderWall(); }
+}
+
+let _tt = null;
+function toast(msg, type='') {
+  const el = document.getElementById('toast');
+  if (!el) return console.log('Toast:', msg);
+  el.textContent = msg; el.className = `toast ${type} show`;
+  clearTimeout(_tt); _tt = setTimeout(() => el.classList.remove('show'), 3200);
+}
+
+function showLoader(msg='Please wait…') { 
+  const el = document.getElementById('loader-text');
+  const l = document.getElementById('loader');
+  if (el) el.textContent = msg; 
+  if (l) l.style.display = 'flex'; 
+}
+
+function hideLoader() { 
+  const l = document.getElementById('loader');
+  if (l) l.style.display = 'none'; 
+}
+
 /* ── Game data ── */
 const GAMES = [
   { name:'AI Puzzle',        icon:'🧠', desc:'Solve intricate AI-based puzzles and logic chains under time pressure.',  tag:'Problem Solving' },
@@ -282,13 +311,6 @@ function showVerifyMode(d) {
 }
 
 /* ── Navigation ── */
-function goTo(page) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  const el = document.getElementById('page-' + page);
-  if (el) { el.classList.add('active'); window.scrollTo({ top:0, behavior:'smooth' }); }
-  if (page === 'landing') countUp('m-certs', DB.get().length);
-  if (page === 'winners') renderWall();
-}
 
 /* ── Count-up ── */
 function countUp(id, target) {
@@ -486,13 +508,3 @@ function clearAll() {
 }
 
 /* ── Toast ── */
-let _tt=null;
-function toast(msg,type='') {
-  const el=document.getElementById('toast');
-  el.textContent=msg; el.className=`toast ${type} show`;
-  clearTimeout(_tt); _tt=setTimeout(()=>el.classList.remove('show'),3200);
-}
-
-/* ── Loader ── */
-function showLoader(msg='Please wait…') { document.getElementById('loader-text').textContent=msg; document.getElementById('loader').style.display='flex'; }
-function hideLoader() { document.getElementById('loader').style.display='none'; }
