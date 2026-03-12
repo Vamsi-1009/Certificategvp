@@ -1,34 +1,5 @@
 'use strict';
 
-/* ── UI Helpers (Defining early for reliability) ── */
-function goTo(page) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  const el = document.getElementById('page-' + page);
-  if (el) { el.classList.add('active'); window.scrollTo({ top:0, behavior:'smooth' }); }
-  if (page === 'landing') { if (typeof countUp === 'function') countUp('m-certs', DB.get().length); }
-  if (page === 'winners') { if (typeof renderWall === 'function') renderWall(); }
-}
-
-let _tt = null;
-function toast(msg, type='') {
-  const el = document.getElementById('toast');
-  if (!el) return console.log('Toast:', msg);
-  el.textContent = msg; el.className = `toast ${type} show`;
-  clearTimeout(_tt); _tt = setTimeout(() => el.classList.remove('show'), 3200);
-}
-
-function showLoader(msg='Please wait…') { 
-  const el = document.getElementById('loader-text');
-  const l = document.getElementById('loader');
-  if (el) el.textContent = msg; 
-  if (l) l.style.display = 'flex'; 
-}
-
-function hideLoader() { 
-  const l = document.getElementById('loader');
-  if (l) l.style.display = 'none'; 
-}
-
 /* ── Game data ── */
 const GAMES = [
   { name:'AI Puzzle',        icon:'🧠', desc:'Solve intricate AI-based puzzles and logic chains under time pressure.',  tag:'Problem Solving' },
@@ -46,7 +17,7 @@ const CERT_BASE_URL = 'https://aikaryashala.com/gvp/stall/certificates/';
 /* ── Cloud DB (Supabase) ── */
 const SUPABASE_URL = window.CONFIG?.SUPABASE_URL || 'YOUR_SUPABASE_URL';
 const SUPABASE_KEY = window.CONFIG?.SUPABASE_KEY || 'YOUR_SUPABASE_ANON_KEY';
-const supabase = window.supabase && SUPABASE_URL !== 'YOUR_SUPABASE_URL' 
+const sb = window.supabase && SUPABASE_URL !== 'YOUR_SUPABASE_URL' 
   ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) 
   : null;
 
@@ -77,23 +48,25 @@ const DB = {
     return `AIK-GVPC-25${String(n).padStart(3, '0')}`;
   },
   async sync(c) {
-    if (!supabase) return;
+    if (!sb) return;
     try {
-      const { error } = await supabase.from('certificates').insert([
+      const { error } = await sb.from('certificates').insert([
         { cert_id: c.certificateId, name: c.participantName, game: c.gameName, roll: c.rollNumber, phone: c.phoneNumber, dept: c.department, pos: c.position, dt: c.date, photo: c.photo }
       ]);
       if (error) console.error('Cloud sync failed:', error);
     } catch(e) { console.error('Cloud sync error:', e); }
   },
   async fetch(id) {
-    if (!supabase) return null;
+    if (!sb) return null;
     try {
-      const { data, error } = await supabase.from('certificates').select('*').eq('cert_id', id).single();
+      const { data, error } = await sb.from('certificates').select('*').eq('cert_id', id).single();
       if (error || !data) return null;
       return { id: data.cert_id, n: data.name, g: data.game, id_raw: data.cert_id, p: data.pos, dt: data.dt, d: data.dept, photo: data.photo };
     } catch(e) { return null; }
   },
 };
+window.APP = APP;
+window.DB = DB;
 
 /* ── Helpers ── */
 const fmtDate = () => new Date().toLocaleDateString('en-IN', { day:'numeric', month:'long', year:'numeric' });
@@ -125,28 +98,27 @@ async function compressImage(base64, maxWidth = 800, maxHeight = 1000, quality =
 
 /* ── Init ── */
 document.addEventListener('DOMContentLoaded', async () => {
-  const params = new URLSearchParams(window.location.search);
-  const certId = params.get('id');
-  const hash   = window.location.hash;
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const certId = params.get('id');
+    const hash   = window.location.hash;
 
-  if (certId) {
-    showLoader('Verifying Certificate...');
-    const data = await DB.fetch(certId);
-    hideLoader();
-    if (data) return showVerifyMode(data);
-    else toast('Certificate not found or invalid.', 'err');
-  }
+    if (certId) {
+      showLoader('Verifying...');
+      const data = await DB.fetch(certId);
+      hideLoader();
+      if (data) return showVerifyMode(data);
+    }
 
-  if (hash.startsWith('#verify=')) {
-    try {
+    if (hash.startsWith('#verify=')) {
       const payload = JSON.parse(decodeURIComponent(escape(atob(hash.slice(8)))));
       showVerifyMode(payload);
       return;
-    } catch(e) { console.warn('Invalid verify payload', e); }
-  }
+    }
 
-  renderGames();
-  countUp('m-certs', DB.get().length);
+    renderGames();
+    countUp('m-certs', DB.get().length);
+  } catch(e) { console.warn('Init error handled', e); }
 });
 
 /* ── Verify mode: render certificate from QR scan data ── */

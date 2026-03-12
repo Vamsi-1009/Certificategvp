@@ -11,6 +11,48 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <link rel="stylesheet" href="styles.css">
+<script>
+  // Global Error Handler for Debugging
+  window.onerror = function(msg, url, line) {
+    console.error('AIK_ERR:', msg, 'at', line);
+    const t = document.getElementById('toast');
+    if (t) { 
+        t.textContent = 'Script Error: ' + msg.split(':')[0]; 
+        t.className = 'toast err show'; 
+    }
+  };
+
+  // Immediate Navigation Fallback
+  function goTo(page) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    const el = document.getElementById('page-' + page);
+    if (el) { 
+      el.classList.add('active'); 
+      window.scrollTo({ top:0, behavior:'smooth' }); 
+      // Trigger app logic if loaded
+      if (typeof countUp === 'function' && page === 'landing') countUp('m-certs', (window.DB?.get() || []).length);
+      if (typeof renderWall === 'function' && page === 'winners') renderWall();
+    }
+  }
+
+  function toast(msg, type='') {
+    const el = document.getElementById('toast');
+    if (el) { el.textContent = msg; el.className = 'toast ' + type + ' show'; setTimeout(() => el.classList.remove('show'), 3000); }
+    else { console.log('Toast:', msg); }
+  }
+
+  function showLoader(msg='Please wait...') {
+    const el = document.getElementById('loader-text');
+    const l = document.getElementById('loader');
+    if (el) el.textContent = msg;
+    if (l) l.style.display = 'flex';
+  }
+
+  function hideLoader() {
+    const l = document.getElementById('loader');
+    if (l) l.style.display = 'none';
+  }
+</script>
 </head>
 <body>
 
