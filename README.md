@@ -86,5 +86,5 @@ To ensure long-term stability:
 
 ## 📄 License
 
-MIT License. Developed for **AIKARYASHALA** – Innovation & AI Learning Platform.
+Developed for **AIKARYASHALA** – Innovation & AI Learning Platform.
 Made with ❤️ by AIKARYASHALA Team.

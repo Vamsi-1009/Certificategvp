@@ -12,6 +12,7 @@ const GAMES = [
 
 /* ── App state ── */
 const APP = { game: null, photo: null, cert: null };
+const CERT_BASE_URL = 'https://aikaryashala.com/gvp/stall/certificates/';
 
 /* ── Storage ── */
 const DB = {
@@ -342,13 +343,30 @@ function generateCertificate() {
         photoHTML
     });
 
+    const certUrl = `${CERT_BASE_URL}${id}`;
     const dataUrl = 'data:text/html;charset=utf-8,' + encodeURIComponent(certHTML);
-    drawQR('cert-qr-canvas', dataUrl, 80);
+    // User requested QR with unique ID URL
+    drawQR('cert-qr-canvas', certUrl, 80);
   }
 
   buildAndDrawQR();
   goTo('certificate'); 
   toast('Certificate generated successfully!', 'ok');
+}
+
+/* ── WhatsApp Sharing ── */
+function shareWhatsApp() {
+  if (!APP.cert) return toast('No certificate found to share.', 'err');
+  const { participantName, gameName, certificateId, phoneNumber } = APP.cert;
+  const certUrl = `${CERT_BASE_URL}${certificateId}`;
+  const message = `Congratulations *${participantName}*! Your AIKARYASHALA Certificate for *${gameName}* is ready. View/Verify here: ${certUrl}`;
+  
+  // Use provided phone number if available, otherwise just open WA
+  const waUrl = phoneNumber 
+    ? `https://wa.me/91${phoneNumber}?text=${encodeURIComponent(message)}`
+    : `https://wa.me/?text=${encodeURIComponent(message)}`;
+    
+  window.open(waUrl, '_blank');
 }
 
 /* ── QR renderer ── */
