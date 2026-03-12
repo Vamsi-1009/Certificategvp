@@ -14,6 +14,13 @@ const GAMES = [
 const APP = { game: null, photo: null, cert: null };
 const CERT_BASE_URL = 'https://aikaryashala.com/gvp/stall/certificates/';
 
+/* ── Cloud DB (Supabase) ── */
+const SUPABASE_URL = window.CONFIG?.SUPABASE_URL || 'YOUR_SUPABASE_URL';
+const SUPABASE_KEY = window.CONFIG?.SUPABASE_KEY || 'YOUR_SUPABASE_ANON_KEY';
+const supabase = window.supabase && SUPABASE_URL !== 'YOUR_SUPABASE_URL' 
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) 
+  : null;
+
 /* ── Storage ── */
 const DB = {
   get()    { try { return JSON.parse(localStorage.getItem('aik_certs') || '[]'); } catch { return []; } },
@@ -33,12 +40,29 @@ const DB = {
       }
     }
   },
-  add(c)   { const a = DB.get(); a.push(c); DB.save(a); },
+  add(c)   { const a = DB.get(); a.push(c); DB.save(a); DB.sync(c); },
   clear()  { localStorage.removeItem('aik_certs'); localStorage.removeItem('aik_n'); },
   nextId() {
     const n = (parseInt(localStorage.getItem('aik_n') || '0', 10)) + 1;
     localStorage.setItem('aik_n', String(n));
     return `AIK-GVPC-25${String(n).padStart(3, '0')}`;
+  },
+  async sync(c) {
+    if (!supabase) return;
+    try {
+      const { error } = await supabase.from('certificates').insert([
+        { cert_id: c.certificateId, name: c.participantName, game: c.gameName, roll: c.rollNumber, phone: c.phoneNumber, dept: c.department, pos: c.position, dt: c.date, photo: c.photo }
+      ]);
+      if (error) console.error('Cloud sync failed:', error);
+    } catch(e) { console.error('Cloud sync error:', e); }
+  },
+  async fetch(id) {
+    if (!supabase) return null;
+    try {
+      const { data, error } = await supabase.from('certificates').select('*').eq('cert_id', id).single();
+      if (error || !data) return null;
+      return { id: data.cert_id, n: data.name, g: data.game, id_raw: data.cert_id, p: data.pos, dt: data.dt, d: data.dept, photo: data.photo };
+    } catch(e) { return null; }
   },
 };
 
@@ -71,14 +95,24 @@ async function compressImage(base64, maxWidth = 800, maxHeight = 1000, quality =
 }
 
 /* ── Init ── */
-document.addEventListener('DOMContentLoaded', () => {
-  // Check if opened via QR scan (hash contains verify payload)
-  const hash = window.location.hash;
+document.addEventListener('DOMContentLoaded', async () => {
+  const params = new URLSearchParams(window.location.search);
+  const certId = params.get('id');
+  const hash   = window.location.hash;
+
+  if (certId) {
+    showLoader('Verifying Certificate...');
+    const data = await DB.fetch(certId);
+    hideLoader();
+    if (data) return showVerifyMode(data);
+    else toast('Certificate not found or invalid.', 'err');
+  }
+
   if (hash.startsWith('#verify=')) {
     try {
       const payload = JSON.parse(decodeURIComponent(escape(atob(hash.slice(8)))));
       showVerifyMode(payload);
-      return; // Skip normal app init
+      return;
     } catch(e) { console.warn('Invalid verify payload', e); }
   }
 
