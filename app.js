@@ -386,7 +386,9 @@ function drawQR(containerId, text, size) {
     });
     setTimeout(() => {
       const c = container.querySelector('canvas');
+      const i = container.querySelector('img');
       if (c) c.style.cssText = 'display:block;border-radius:4px;';
+      if (i) i.style.display = 'none'; // Hide the img version to avoid duplication
     }, 60);
   } catch(e) {
     console.error('QR generation failed:', e);

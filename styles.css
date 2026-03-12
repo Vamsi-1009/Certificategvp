@@ -282,8 +282,8 @@ select.field-input option { background:var(--bg3); }
 .cert-portrait-ph  { display:flex; align-items:center; justify-content:center; }
 .cert-portrait-id  { background:#07080D; color:var(--gold-lt); font-family:'JetBrains Mono',monospace; font-size:.6rem; letter-spacing:.08em; padding:4px 9px; border-radius:3px; border:1px solid rgba(201,168,76,.25); white-space:nowrap; font-weight:500; }
 .cert-qr-area { display:flex; flex-direction:column; align-items:center; gap:5px; }
-.cert-qr-area div canvas,
-.cert-qr-area canvas { padding:3px; background:#fff; border:1.5px solid rgba(201,168,76,.35); border-radius:5px; display:block; }
+.cert-qr-area canvas,
+.cert-qr-area img { padding:3px; background:#fff; border:1.5px solid rgba(201,168,76,.35); border-radius:5px; }
 #cert-qr-canvas { display:flex; align-items:center; justify-content:center; }
 #verify-qr      { display:flex; align-items:center; justify-content:center; }
 .cert-qr-lbl { font-size:.58rem; color:#9a7e40; letter-spacing:.1em; text-transform:uppercase; }
